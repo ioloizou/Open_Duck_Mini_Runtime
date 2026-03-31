@@ -4,7 +4,6 @@ import pickle
 import numpy as np
 from mini_bdx_runtime.rustypot_position_hwi import HWI
 from mini_bdx_runtime.onnx_infer import OnnxInfer
-
 from mini_bdx_runtime.raw_imu import Imu
 from mini_bdx_runtime.xbox_controller import XBoxController
 from mini_bdx_runtime.feet_contacts import FeetContacts
@@ -140,7 +139,7 @@ class RLWalk:
         cmds = self.last_commands
 
         projected_gravity = None
-        if "quarternion" in imu_data and imu_data["quaternion"] is not None:
+        if "quaternion" in imu_data and imu_data["quaternion"] is not None:
             imu_quat = imu_data["quaternion"]
             if len(imu_quat) == 4 and all(q is not None for q in imu_quat):
                 try:
@@ -163,6 +162,7 @@ class RLWalk:
                 cmds,
             ]
         )
+        return obs
 
     def quat_apply_inverse(self, quat, vec):
         """Apply an inverse quaternion rotation to a vector."""
