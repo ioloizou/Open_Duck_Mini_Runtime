@@ -26,7 +26,7 @@ class RLWalk:
         self,
         onnx_model_path: str,
         duck_config_path: str = f"{HOME_DIR}/duck_config.json",
-        serial_port: str = "/dev/ttyACM0",
+        serial_port: str = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46082643-if00",
         control_freq: float = 50,
         pid=[30, 0, 0],
         action_scale=0.25,
@@ -253,6 +253,8 @@ class RLWalk:
                 obs = self.get_obs()
                 if obs is None:
                     continue
+                obs_gyro, obs_accelero = obs[0:3], obs[3:6]
+                print(obs[0:3],obs[3:6])
 
                 self.imitation_i += 1 * (
                     self.phase_frequency_factor + self.phase_frequency_factor_offset
@@ -336,6 +338,7 @@ class RLWalk:
                 self.projector.stop()
             self.feet_contacts.stop()
 
+        print(obs_gyro, obs_accelero)
         if self.save_obs:
             pickle.dump(self.saved_obs, open("robot_saved_obs.pkl", "wb"))
         print("TURNING OFF")

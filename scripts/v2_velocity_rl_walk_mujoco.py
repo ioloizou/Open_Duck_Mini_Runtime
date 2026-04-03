@@ -96,7 +96,7 @@ class RLWalk:
 
         self.command_freq = 20
         if self.commands:
-            self.xbox_controller = XBoxController(sampling_freq=self.command_freq)
+            self.xbox_controller = XBoxController(self.command_freq)
 
         # Optional expression features
         if self.duck_config.eyes:

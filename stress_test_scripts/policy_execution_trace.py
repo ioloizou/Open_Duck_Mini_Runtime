@@ -126,7 +126,7 @@ class RLWalkTrace:
         self.xbox_controller = None
         if self.commands:
             self.xbox_controller = self.run_stage(
-                "init.xbox_controller", XBoxController, sampling_freq=self.command_freq
+                "init.xbox_controller", XBoxController,
             )
 
         self.eyes = None
