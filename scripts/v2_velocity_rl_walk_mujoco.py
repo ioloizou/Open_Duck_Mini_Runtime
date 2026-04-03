@@ -55,7 +55,7 @@ class RLWalk:
         self.pid = pid
 
         self.save_obs = save_obs
-        if self.save_obs is not None:
+        if self.save_obs:
             self.saved_obs = []
 
         self.replay_obs = replay_obs
@@ -109,17 +109,17 @@ class RLWalk:
             self.antennas = Antennas()
 
     def get_obs(self):
-        imu_data = self.imu.get_imu_data()
+        imu_data = self.imu.get_data()
 
         dof_pos = self.hwi.get_present_positions(
-            ingore=[
+            ignore=[
                 "left_antenna",
                 "right_antenna",
             ]
         )  # rad
 
         dof_vel = self.hwi.get_present_velocities(
-            ingore=[
+            ignore=[
                 "left_antenna",
                 "right_antenna",
             ]
@@ -157,7 +157,7 @@ class RLWalk:
                 imu_data["accelero"],
                 projected_gravity,
                 dof_pos - self.init_pos,
-                dof_vel * 0.05,
+                dof_vel,
                 self.last_action,
                 cmds,
             ]
@@ -235,11 +235,11 @@ class RLWalk:
                     self.saved_obs.append(obs)
 
                 if self.replay_obs is not None:
-                    if i >= len(self.replay_obs):
-                        print("Finished replaying obs")
+                    if i < len(self.replay_obs):
+                        obs = self.replay_obs[i]
+                    else:
+                        print("BREAKING ")
                         break
-                    obs = self.replay_obs[i]
-                    i += 1
 
                 action = self.policy.infer(obs)
 
@@ -302,7 +302,7 @@ if __name__ == "__main__":
         default=f"{HOME_DIR}/duck_config.json",
         help="Path to the duck config json file.",
     )
-    
+
     parser.add_argument("-a", "--action_scale", type=float, default=0.25)
     parser.add_argument("-p", type=int, default=30)
     parser.add_argument("-i", type=int, default=0)
