@@ -154,12 +154,12 @@ class RLWalk:
         obs = np.concatenate(
             [
                 imu_data["gyro"],
-                imu_data["accelero"],
+                #imu_data["accelero"],
                 projected_gravity,
                 dof_pos - self.init_pos,
                 dof_vel,
                 self.last_action,
-                cmds,
+                cmds[:3],
             ]
         )
         return obs
