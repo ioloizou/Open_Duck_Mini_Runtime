@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
 """
-Expressive head controller using simple attractors + optional oscillators.
+Expressive head controller using attractor-tracked emotional postures.
 
-This version replaces pure open-loop joint functions with:
-    q_ddot = k * (g - q) - c * q_dot + forcing(t)
+Key change:
+- Oscillations are added to the GOAL, not as acceleration forcing.
 
-where:
-- g is the emotion-dependent target posture
-- forcing(t) is an optional small oscillator for expressivity
+So for each joint:
+    g_eff(t) = g_base + oscillator(t)
+    q_ddot = k * (g_eff - q) - c * q_dot
 
-This is a practical, lightweight approximation of the "discrete attractor
-+ rhythmic component" idea from movement primitives.
-
-Run with:
-    python expressive_scripts/head_function_player.py
-
-You can switch emotion live by editing CURRENT_EMOTION before launch,
-or by adding your own event logic later.
+This makes oscillation amplitudes much easier to interpret and tune.
 """
 
 import os
@@ -24,7 +17,7 @@ import time
 import math
 import random
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 
@@ -42,8 +35,7 @@ DUCK_CONFIG_PATH = f"{HOME_DIR}/duck_config.json"
 SERIAL_PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46082643-if00"
 
 FREQ_HZ = 60.0
-DURATION_S = 0.0  # 0.0 means run forever
-
+DURATION_S = 0.0  # 0.0 = run forever
 PRINT_EVERY_S = 0.5
 CLIP_TO_LIMITS = True
 ENABLE_ANTENNAS = True
@@ -52,11 +44,9 @@ BODY_KP = 30.0
 HEAD_KP = 8.0
 KD = 0.0
 
-# Start emotion here
 CURRENT_EMOTION = "happy"
-# Options: "happy", "sad", "curious", "intrigued"
+# Options: happy, sad, curious, intrigued
 
-# Conservative limits from controller mapping code (radians).
 JOINT_LIMITS = {
     "neck_pitch": (-0.34, 1.10),
     "head_pitch": (-0.78, 0.30),
@@ -64,7 +54,6 @@ JOINT_LIMITS = {
     "head_roll": (-0.50, 0.50),
 }
 
-# Relative antenna limits; adjust if your implementation differs.
 ANTENNA_LIMITS = (-1.0, 1.0)
 
 
@@ -99,12 +88,10 @@ class AntennaControl:
 
 @dataclass
 class EmotionSpec:
-    # Same k, c for all joints in this emotion for simplicity
     k: float
     c: float
     joints: Dict[str, JointControl]
     antennas: AntennaControl
-    # Optional duration for initial "settle" behavior or later extensions
     description: str = ""
 
 
@@ -115,17 +102,16 @@ class JointState:
 
 
 # =========================
-# EMOTION LIBRARY
-# goal_offset values are relative to init pose
+# EMOTIONS
 # =========================
 def make_intrigued_roll() -> float:
-    return random.choice([-1.0, 1.0]) * 0.16
+    return random.choice([-1.0, 1.0]) * 0.14
 
 
 EMOTIONS: Dict[str, EmotionSpec] = {
     "happy": EmotionSpec(
-        k=5.0,
-        c=6.0,
+        k=18.0,
+        c=7.0,
         description="Looks slightly up, cheerful head-roll wiggle, active antennas.",
         joints={
             "neck_pitch": JointControl(
@@ -142,7 +128,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.25, 0.5, 0.0),
+                osc=Oscillator(0.10, 1.4, 0.0),   # much more visible now
             ),
         },
         antennas=AntennaControl(
@@ -182,8 +168,8 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "curious": EmotionSpec(
-        k=7.0,
-        c=5.5,
+        k=10.0,
+        c=6.0,
         description="Slightly looks up and scans slowly side to side.",
         joints={
             "neck_pitch": JointControl(
@@ -211,7 +197,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "intrigued": EmotionSpec(
-        k=5.0,
+        k=6.0,
         c=5.0,
         description="Small upward posture with a slow tilted head to one side.",
         joints={
@@ -229,7 +215,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=make_intrigued_roll(),
-                osc=Oscillator(0.015, 0.25, 0.0),
+                osc=Oscillator(0.02, 0.20, 0.0),
             ),
         },
         antennas=AntennaControl(
@@ -259,12 +245,12 @@ def clip_antenna(value: float, use_clip: bool) -> float:
     return float(np.clip(value, low, high))
 
 
-def attractor_step(q: float, v: float, g: float, dt: float, k: float, c: float, forcing: float = 0.0) -> tuple[float, float]:
+def attractor_step(q: float, v: float, g: float, dt: float, k: float, c: float) -> tuple[float, float]:
     """
     Semi-implicit Euler integration of:
-        q_ddot = k * (g - q) - c * q_dot + forcing
+        q_ddot = k * (g - q) - c * q_dot
     """
-    a = k * (g - q) - c * v + forcing
+    a = k * (g - q) - c * v
     v_new = v + dt * a
     q_new = q + dt * v_new
     return q_new, v_new
@@ -275,10 +261,6 @@ def build_joint_goals(init_pose: Dict[str, float], emotion: EmotionSpec) -> Dict
     for joint_name, joint_ctrl in emotion.joints.items():
         goals[joint_name] = init_pose[joint_name] + joint_ctrl.goal_offset
     return goals
-
-
-def compute_joint_forcing(joint_ctrl: JointControl, t: float) -> float:
-    return joint_ctrl.osc.value(t)
 
 
 def compute_antennas(emotion: EmotionSpec, t: float, use_clip: bool) -> tuple[float, float]:
@@ -303,7 +285,6 @@ def main() -> None:
     hwi = HWI(duck_config, usb_port=SERIAL_PORT)
     antennas = Antennas() if (ENABLE_ANTENNAS and duck_config.antennas) else None
 
-    # Mirror the walking script behavior: softer head gains.
     kps = [BODY_KP] * 14
     kds = [KD] * 14
     kps[5:9] = [HEAD_KP, HEAD_KP, HEAD_KP, HEAD_KP]
@@ -343,29 +324,22 @@ def main() -> None:
 
             targets: Dict[str, float] = {}
 
-            # Joint updates
             for joint_name, joint_ctrl in emotion.joints.items():
                 state = joint_states[joint_name]
-                g = goals[joint_name]
-                forcing = compute_joint_forcing(joint_ctrl, t)
+
+                g_base = goals[joint_name]
+                g_eff = g_base + joint_ctrl.osc.value(t)
 
                 q_new, v_new = attractor_step(
                     q=state.q,
                     v=state.v,
-                    g=g,
+                    g=g_eff,
                     dt=dt,
                     k=emotion.k,
                     c=emotion.c,
-                    forcing=forcing,
                 )
 
                 q_new = clip_if_needed(joint_name, q_new, use_clip)
-
-                # If clipping occurred, zero velocity to avoid pushing against limits forever.
-                if q_new != q_new:
-                    # Defensive, should never happen
-                    q_new = state.q
-                    v_new = 0.0
 
                 low, high = JOINT_LIMITS[joint_name]
                 if use_clip and (abs(q_new - low) < 1e-9 or abs(q_new - high) < 1e-9):
@@ -375,10 +349,8 @@ def main() -> None:
                 state.v = v_new
                 targets[joint_name] = q_new
 
-            # Antennas
             antenna_left, antenna_right = compute_antennas(emotion, t, use_clip)
 
-            # Send commands
             for joint_name, value in targets.items():
                 hwi.set_position(joint_name, value)
 
