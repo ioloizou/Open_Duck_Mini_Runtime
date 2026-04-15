@@ -34,14 +34,14 @@ HOME_DIR = os.path.expanduser("~")
 DUCK_CONFIG_PATH = f"{HOME_DIR}/duck_config.json"
 SERIAL_PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46082643-if00"
 
-FREQ_HZ = 60.0
+FREQ_HZ = 50
 DURATION_S = 0.0  # 0.0 = run forever
-PRINT_EVERY_S = 0.5
+PRINT_EVERY_S = 10
 CLIP_TO_LIMITS = True
 ENABLE_ANTENNAS = True
 
 BODY_KP = 30.0
-HEAD_KP = 8.0
+HEAD_KP = 20.0
 KD = 0.0
 
 CURRENT_EMOTION = "happy"
@@ -124,18 +124,18 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.00, 0.00, 0.0),
+                osc=Oscillator(0.15, 1, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.10, 1.4, 0.0),   # much more visible now
+                osc=Oscillator(0.25, , 0.0),   # much more visible now
             ),
         },
         antennas=AntennaControl(
             offset_left=0.15,
             offset_right=0.15,
-            osc_left=Oscillator(0.22, 2.2, 0.0),
-            osc_right=Oscillator(0.22, 2.2, math.pi / 2.0),
+            osc_left=Oscillator(0.1, 5, 0.0),
+            osc_right=Oscillator(0.1, 5, math.pi / 2.0),
         ),
     ),
     "sad": EmotionSpec(
