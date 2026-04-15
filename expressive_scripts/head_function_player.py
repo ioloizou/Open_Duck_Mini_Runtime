@@ -41,7 +41,7 @@ CLIP_TO_LIMITS = True
 ENABLE_ANTENNAS = True
 
 BODY_KP = 30.0
-HEAD_KP = 20.0
+HEAD_KP = 8.0
 KD = 0.0
 
 CURRENT_EMOTION = "happy"
@@ -110,7 +110,7 @@ def make_intrigued_roll() -> float:
 
 EMOTIONS: Dict[str, EmotionSpec] = {
     "happy": EmotionSpec(
-        k=18.0,
+        k=80.0,
         c=7.0,
         description="Looks slightly up, cheerful head-roll wiggle, active antennas.",
         joints={
@@ -124,11 +124,11 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.15, 1.5, 0.0),
+                osc=Oscillator(0.15, 1, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.25, 2, 0.0),   # much more visible now
+                osc=Oscillator(0.15, 2, 0.0),   # much more visible now
             ),
         },
         antennas=AntennaControl(
