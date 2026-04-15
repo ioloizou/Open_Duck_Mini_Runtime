@@ -124,7 +124,7 @@ def make_intrigued_roll() -> float:
 
 EMOTIONS: Dict[str, EmotionSpec] = {
     "happy": EmotionSpec(
-        k=10.0,
+        k=5.0,
         c=6.0,
         description="Looks slightly up, cheerful head-roll wiggle, active antennas.",
         joints={
@@ -142,7 +142,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.25, 1.8, 0.0),
+                osc=Oscillator(0.25, 0.5, 0.0),
             ),
         },
         antennas=AntennaControl(
