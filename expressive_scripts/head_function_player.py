@@ -142,7 +142,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.08, 1.8, 0.0),
+                osc=Oscillator(0.25, 1.8, 0.0),
             ),
         },
         antennas=AntennaControl(
