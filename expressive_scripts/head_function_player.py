@@ -105,7 +105,7 @@ class JointState:
 # EMOTIONS
 # =========================
 def make_intrigued_roll() -> float:
-    return random.choice([-1.0, 1.0]) * 0.14
+    return random.choice([-1.0, 1.0]) * 0.3
 
 
 EMOTIONS: Dict[str, EmotionSpec] = {
@@ -215,12 +215,12 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=make_intrigued_roll(),
-                osc=Oscillator(0.02, 0.20, 0.0),
+                osc=Oscillator(0.00, 0.00, 0.0),
             ),
         },
         antennas=AntennaControl(
-            offset_left=0.25,
-            offset_right=0.25,
+            offset_left=1,
+            offset_right=1,
             osc_left=Oscillator(0.00, 0.00, 0.0),
             osc_right=Oscillator(0.00, 0.00, 0.0),
         ),
