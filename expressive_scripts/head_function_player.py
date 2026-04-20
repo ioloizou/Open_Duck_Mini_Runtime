@@ -70,7 +70,9 @@ class Oscillator:
     def value(self, t: float) -> float:
         if self.amplitude == 0.0 or self.frequency_hz == 0.0:
             return 0.0
-        return self.amplitude * math.sin(2.0 * math.pi * self.frequency_hz * t + self.phase)
+        return self.amplitude * math.sin(
+            2.0 * math.pi * self.frequency_hz * t + self.phase
+        )
 
 
 @dataclass
@@ -111,7 +113,7 @@ def make_intrigued_roll() -> float:
 
 EMOTIONS: Dict[str, EmotionSpec] = {
     "happy": EmotionSpec(
-        k=80.0,
+        k=120.0,
         c=7.0,
         description="Looks slightly up, cheerful head-roll wiggle, active antennas.",
         joints={
@@ -129,14 +131,14 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.15, 2, 0.0),   # much more visible now
+                osc=Oscillator(0.25, 2, 0.0),  # much more visible now
             ),
         },
         antennas=AntennaControl(
             offset_left=0.15,
             offset_right=0.15,
             osc_left=Oscillator(0.1, 5, 0.0),
-            osc_right=Oscillator(0.1, 5, math.pi / 2.0),
+            osc_right=Oscillator(0.1, 5, 0.0),
         ),
     ),
     "sad": EmotionSpec(
@@ -246,7 +248,9 @@ def clip_antenna(value: float, use_clip: bool) -> float:
     return float(np.clip(value, low, high))
 
 
-def attractor_step(q: float, v: float, g: float, dt: float, k: float, c: float) -> tuple[float, float]:
+def attractor_step(
+    q: float, v: float, g: float, dt: float, k: float, c: float
+) -> tuple[float, float]:
     """
     Semi-implicit Euler integration of:
         q_ddot = k * (g - q) - c * q_dot
@@ -257,14 +261,18 @@ def attractor_step(q: float, v: float, g: float, dt: float, k: float, c: float) 
     return q_new, v_new
 
 
-def build_joint_goals(init_pose: Dict[str, float], emotion: EmotionSpec) -> Dict[str, float]:
+def build_joint_goals(
+    init_pose: Dict[str, float], emotion: EmotionSpec
+) -> Dict[str, float]:
     goals: Dict[str, float] = {}
     for joint_name, joint_ctrl in emotion.joints.items():
         goals[joint_name] = init_pose[joint_name] + joint_ctrl.goal_offset
     return goals
 
 
-def compute_antennas(emotion: EmotionSpec, t: float, use_clip: bool) -> tuple[float, float]:
+def compute_antennas(
+    emotion: EmotionSpec, t: float, use_clip: bool
+) -> tuple[float, float]:
     ant = emotion.antennas
     left = ant.offset_left + ant.osc_left.value(t)
     right = ant.offset_right + ant.osc_right.value(t)
