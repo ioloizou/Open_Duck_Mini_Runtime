@@ -12,6 +12,7 @@ So for each joint:
 This makes oscillation amplitudes much easier to interpret and tune.
 """
 
+import argparse
 import os
 import time
 import math
@@ -281,6 +282,19 @@ def get_emotion_spec(name: str) -> EmotionSpec:
 # MAIN
 # =========================
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Play an expressive head motion for a selected emotion."
+    )
+    parser.add_argument(
+        "emotion",
+        nargs="?",
+        default=CURRENT_EMOTION,
+        choices=sorted(EMOTIONS.keys()),
+        help="Emotion to play.",
+    )
+    args = parser.parse_args()
+    selected_emotion = args.emotion
+
     duck_config = DuckConfig(config_json_path=DUCK_CONFIG_PATH)
     hwi = HWI(duck_config, usb_port=SERIAL_PORT)
     antennas = Antennas() if (ENABLE_ANTENNAS and duck_config.antennas) else None
@@ -297,7 +311,7 @@ def main() -> None:
     dt = 1.0 / FREQ_HZ
     use_clip = CLIP_TO_LIMITS
 
-    emotion = get_emotion_spec(CURRENT_EMOTION)
+    emotion = get_emotion_spec(selected_emotion)
     goals = build_joint_goals(init, emotion)
 
     joint_states: Dict[str, JointState] = {
@@ -309,7 +323,7 @@ def main() -> None:
     next_print_t = start_t
 
     print("Starting expressive head controller")
-    print(f"Emotion: {CURRENT_EMOTION}")
+    print(f"Emotion: {selected_emotion}")
     print(f"Description: {emotion.description}")
     print(f"Clipping: {'on' if use_clip else 'off'}")
     print(f"k={emotion.k:.2f}, c={emotion.c:.2f}")
@@ -363,7 +377,7 @@ def main() -> None:
                     "t={:.2f}s emotion={} neck={:+.3f} hp={:+.3f} hy={:+.3f} hr={:+.3f} "
                     "Lant={:+.3f} Rant={:+.3f}".format(
                         t,
-                        CURRENT_EMOTION,
+                        selected_emotion,
                         targets["neck_pitch"],
                         targets["head_pitch"],
                         targets["head_yaw"],
