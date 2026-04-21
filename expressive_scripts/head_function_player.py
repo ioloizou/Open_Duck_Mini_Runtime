@@ -142,7 +142,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "sad": EmotionSpec(
-        k=20.0,
+        k=10.0,
         c=4.5,
         description="Slow downward collapse with little or no rhythmic motion.",
         joints={
@@ -156,7 +156,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.1, 1, 0.0),
+                osc=Oscillator(0.1, 0.75, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
