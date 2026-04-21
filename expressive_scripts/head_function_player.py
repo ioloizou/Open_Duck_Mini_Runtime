@@ -171,7 +171,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "curious": EmotionSpec(
-        k=10.0,
+        k=30.0,
         c=6.0,
         description="Slightly looks up and scans slowly side to side.",
         joints={
@@ -185,7 +185,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.18, 0.35, 0.0),
+                osc=Oscillator(0.35, 0.75, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
