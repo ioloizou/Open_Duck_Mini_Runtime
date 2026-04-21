@@ -147,11 +147,11 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         description="Slow downward collapse with little or no rhythmic motion.",
         joints={
             "neck_pitch": JointControl(
-                goal_offset=-0.22,
+                goal_offset=-0.3,
                 osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_pitch": JointControl(
-                goal_offset=-0.28,
+                goal_offset=-0.7,
                 osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_yaw": JointControl(
