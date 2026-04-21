@@ -270,12 +270,12 @@ EMOTIONS: Dict[str, EmotionSpec] = {
                 osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_pitch": JointControl(
-                goal_offset=-0.75,
+                goal_offset=-0.65,
                 osc=Oscillator(
-                    0.05,
+                    0.1,
                     0.75,
                     0.0,
-                    top_rebounds=1,
+                    top_rebounds=2,
                     bottom_rebounds=1,
                     mid_level=0.55,
                     n_harmonics=8,
