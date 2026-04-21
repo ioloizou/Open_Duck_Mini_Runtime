@@ -67,12 +67,99 @@ class Oscillator:
     frequency_hz: float = 0.0
     phase: float = 0.0
 
+    # Expressive shape parameters
+    top_rebounds: int = 0
+    bottom_rebounds: int = 0
+    mid_level: float = 0.55
+    n_harmonics: int = 10
+
+    # Cached Fourier coefficients
+    _a: np.ndarray = field(init=False, repr=False)
+    _b: np.ndarray = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self.rebuild()
+
+    def rebuild(self):
+        """
+        Recompute the Fourier coefficients.
+        Call this only if expressive parameters change.
+        """
+        seq = self._build_sequence()
+
+        n_samples = 2048
+        theta = np.linspace(0.0, 2.0 * np.pi, n_samples, endpoint=False)
+
+        # Sample the level sequence over one period
+        N = len(seq)
+        idx = np.floor((theta / (2.0 * np.pi)) * N).astype(int) % N
+        target = seq[idx]
+
+        # FFT and truncate
+        F = np.fft.rfft(target) / n_samples
+        keep = np.zeros_like(F)
+        max_h = min(self.n_harmonics, len(F) - 1)
+        keep[: max_h + 1] = F[: max_h + 1]
+
+        recon = np.fft.irfft(keep * n_samples, n=n_samples)
+
+        # Normalize to [-1, 1]
+        recon /= max(1e-9, np.max(np.abs(recon)))
+
+        # Compute explicit cosine/sine coefficients
+        a = np.zeros(max_h + 1, dtype=float)
+        b = np.zeros(max_h + 1, dtype=float)
+
+        for k in range(max_h + 1):
+            cos_k = np.cos(k * theta)
+            sin_k = np.sin(k * theta)
+
+            a[k] = (2.0 / n_samples) * np.sum(recon * cos_k)
+            b[k] = (2.0 / n_samples) * np.sum(recon * sin_k)
+
+        a[0] *= 0.5  # DC correction
+        self._a = a
+        self._b = b
+
     def value(self, t: float) -> float:
+        """
+        Cheap runtime evaluation.
+        """
         if self.amplitude == 0.0 or self.frequency_hz == 0.0:
             return 0.0
-        return self.amplitude * math.sin(
-            2.0 * math.pi * self.frequency_hz * t + self.phase
-        )
+
+        theta = 2.0 * math.pi * self.frequency_hz * t + self.phase
+
+        y = self._a[0]
+        for k in range(1, len(self._a)):
+            y += self._a[k] * math.cos(k * theta)
+            y += self._b[k] * math.sin(k * theta)
+
+        return self.amplitude * y
+
+    def _build_sequence(self) -> np.ndarray:
+        """
+        Build one cycle of symbolic expressive levels.
+        Example with top_rebounds=2, bottom_rebounds=1:
+            high, highmid, high, highmid, high,
+            highmid, neutral, lowmid, low,
+            lowmid, low,
+            lowmid, neutral, highmid
+        """
+        m = float(self.mid_level)
+        seq = [1.0]
+
+        for _ in range(self.top_rebounds):
+            seq += [m, 1.0]
+
+        seq += [m, 0.0, -m, -1.0]
+
+        for _ in range(self.bottom_rebounds):
+            seq += [-m, -1.0]
+
+        seq += [-m, 0.0, m]
+
+        return np.array(seq, dtype=float)
 
 
 @dataclass
@@ -127,18 +214,50 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.15, 2, 0.0),
+                osc=Oscillator(
+                    0.15,
+                    2,
+                    0.0,
+                    top_rebounds=1,
+                    bottom_rebounds=1,
+                    mid_level=0.55,
+                    n_harmonics=8,
+                ),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.25, 2.5, 0.0),  # much more visible now
+                osc=Oscillator(
+                    0.25,
+                    2.5,
+                    0.0,
+                    top_rebounds=2,
+                    bottom_rebounds=1,
+                    mid_level=0.55,
+                    n_harmonics=10,
+                ),
             ),
         },
         antennas=AntennaControl(
             offset_left=0.15,
             offset_right=0.15,
-            osc_left=Oscillator(0.1, 5, 0.0),
-            osc_right=Oscillator(0.1, 5, 0.0),
+            osc_left=Oscillator(
+                0.1,
+                5,
+                0.0,
+                top_rebounds=2,
+                bottom_rebounds=1,
+                mid_level=0.55,
+                n_harmonics=10,
+            ),
+            osc_right=Oscillator(
+                0.01,
+                5,
+                0.0,
+                top_rebounds=2,
+                bottom_rebounds=1,
+                mid_level=0.55,
+                n_harmonics=10,
+            ),
         ),
     ),
     "sad": EmotionSpec(
@@ -151,12 +270,20 @@ EMOTIONS: Dict[str, EmotionSpec] = {
                 osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_pitch": JointControl(
-                goal_offset=-0.7,
-                osc=Oscillator(0.00, 0.00, 0.0),
+                goal_offset=-0.75,
+                osc=Oscillator(
+                    0.05,
+                    0.75,
+                    0.0,
+                    top_rebounds=1,
+                    bottom_rebounds=1,
+                    mid_level=0.55,
+                    n_harmonics=8,
+                ),
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.1, 0.75, 0.0),
+                osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
@@ -185,7 +312,15 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.35, 0.75, 0.0),
+                osc=Oscillator(
+                    0.35,
+                    0.75,
+                    0.0,
+                    top_rebounds=1,
+                    bottom_rebounds=1,
+                    mid_level=0.55,
+                    n_harmonics=8,
+                ),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
@@ -195,8 +330,24 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         antennas=AntennaControl(
             offset_left=0.30,
             offset_right=0.30,
-            osc_left=Oscillator(0.04, 0.30, 0.0),
-            osc_right=Oscillator(0.04, 0.30, 0.0),
+            osc_left=Oscillator(
+                0.04,
+                0.30,
+                0.0,
+                top_rebounds=1,
+                bottom_rebounds=0,
+                mid_level=0.55,
+                n_harmonics=6,
+            ),
+            osc_right=Oscillator(
+                0.04,
+                0.30,
+                0.0,
+                top_rebounds=1,
+                bottom_rebounds=0,
+                mid_level=0.55,
+                n_harmonics=6,
+            ),
         ),
     ),
     "intrigued": EmotionSpec(
