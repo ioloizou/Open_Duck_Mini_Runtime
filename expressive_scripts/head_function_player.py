@@ -261,7 +261,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "sad": EmotionSpec(
-        k=10.0,
+        k=50.0,
         c=4.5,
         description="Slow downward collapse with little or no rhythmic motion.",
         joints={
@@ -273,7 +273,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
                 goal_offset=-0.65,
                 osc=Oscillator(
                     0.1,
-                    0.75,
+                    0.5,
                     0.0,
                     top_rebounds=2,
                     bottom_rebounds=1,
