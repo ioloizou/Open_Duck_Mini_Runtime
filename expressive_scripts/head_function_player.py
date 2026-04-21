@@ -113,7 +113,7 @@ def make_intrigued_roll() -> float:
 
 EMOTIONS: Dict[str, EmotionSpec] = {
     "happy": EmotionSpec(
-        k=120.0,
+        k=200.0,
         c=7.0,
         description="Looks slightly up, cheerful head-roll wiggle, active antennas.",
         joints={
@@ -127,11 +127,11 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.15, 1, 0.0),
+                osc=Oscillator(0.15, 2, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.25, 2, 0.0),  # much more visible now
+                osc=Oscillator(0.25, 2.5, 0.0),  # much more visible now
             ),
         },
         antennas=AntennaControl(
@@ -142,12 +142,12 @@ EMOTIONS: Dict[str, EmotionSpec] = {
         ),
     ),
     "sad": EmotionSpec(
-        k=3.0,
+        k=20.0,
         c=4.5,
         description="Slow downward collapse with little or no rhythmic motion.",
         joints={
             "neck_pitch": JointControl(
-                goal_offset=0.22,
+                goal_offset=-0.22,
                 osc=Oscillator(0.00, 0.00, 0.0),
             ),
             "head_pitch": JointControl(
@@ -156,7 +156,7 @@ EMOTIONS: Dict[str, EmotionSpec] = {
             ),
             "head_yaw": JointControl(
                 goal_offset=0.00,
-                osc=Oscillator(0.00, 0.00, 0.0),
+                osc=Oscillator(0.1, 1, 0.0),
             ),
             "head_roll": JointControl(
                 goal_offset=0.00,
